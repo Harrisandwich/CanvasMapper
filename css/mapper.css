@@ -15,13 +15,30 @@ canvas{
     margin-right: 200px;
 
 }
+textarea{
+    resize:none;
+}
 
+button {
+    outline: none;
+}
 
+#canvas-container{
+    position: absolute;
+    transform-origin: 0 0;
+}
 
 #jsonText{
-    height:200px;
-    max-height: 200px;
+    height: 100px;
+    max-height: 100px;
+    width: 100%;
 }
+
+#brushToggleContainer{
+    display: none;
+}
+
+
 
 .controls{
     float:right;
@@ -30,9 +47,43 @@ canvas{
     background-color: rgb(100,100,100); 
     display: block;
     position: fixed;
-    overflow: scroll;
+    /*overflow: scroll;*/
 }
 
+.button-grid{
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+.button-grid .btn{
+
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    background-color: grey;
+}
+
+.button-grid .btn:hover{
+
+    background-color: #8c8c8c;
+}
+
+.button-grid .btn.active{
+
+    
+    background-color: #585757;
+}
+
+.button-grid .btn.disabled{
+
+    
+    background-color: rgb(200, 200, 200);
+}
+
+.btn-icon{
+    width: 32px;
+    height: 32px;
+}
 .section{
     display: block;
     background-color: rgb(150,150,150);
@@ -59,17 +110,22 @@ canvas{
     margin-right: 20px;
 }
 
+.section-content{
+    margin-top: 10px;
+}
+
 .list.container{
     
     margin:10px 10px;
     display: inline-block;
-    width:60%;
+    max-height: 150px;
+    overflow-y: scroll;
 
 }
 
 .list.section{
         max-height: 200px;
-    overflow: scroll;
+    
 }
 
 .list .item{
@@ -82,24 +138,37 @@ canvas{
 .item h4{
     margin: 10px;
     padding: 0px;
-    padding-right: 50px;
+    
 }
 .item button{
 
     float: right;
+    width: 50px;
 }
 
 .status .message{
-    display: none;
+    width:100%;
+    min-height: 50px;
+    resize: none;
+    background-color: rgb(200,200,200);
 }
 
 .status .prompt{
     display: none;
 }
 
+.status.section{
+    min-height:150px;
+}
+
 .btn.load{
     display: none;
 }
+
+.btn.reset{
+    display: none;
+}
+
 
 .thumb img{
     width:100%;
@@ -115,7 +184,34 @@ canvas{
 .export{
     display: block;
     background-color: rgb(150,150,150);
-    margin-bottom: 30px !important;
-    margin-top: 30px !important;
     max-height: 50px;
+    width: 100%;
 }
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 100px;
+    top: 20px;
+    left:-10px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    font-size: 10px;
+
+    /* Position the tooltip */
+    position: absolute;
+    z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}
+
