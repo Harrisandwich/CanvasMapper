@@ -24,14 +24,16 @@
 </head>
 <body>
 
-    
+    <div id="canvas-container">
     <canvas id="canvas" width="0" height="0">
    
     </canvas>
+    </div>
+
     <div class="controls">
         <div class="status section">
             <div class="section-head"><label class="section-head-text">Status:</label></div>
-            <h3 class="message">Drawing In Progress. Right Click to Cancel</h3>
+            <h4 class="message"></h4>
             <div class="prompt">
                 <h3>Do you want to save this drawing?</h3>
                 <div class="btn-inline">
@@ -40,15 +42,14 @@
                 </div>
             </div>
         </div>
+        <button class="btn reset" value="reset" onclick="restart()">Restart</button>
         <div class="img-choose section">
             <h4>Image Format</h4>
             <select class="img-choose-dropdown" >
-                
                 <option value="jpg">JPG</option>
                 <option value="png">PNG</option>
             </select>
             <button class="btn" value="set" onclick="loadPreview()">Set</button>
-
             <h4>Image Preview</h4>
             <div class="thumb">
                 <div class="img-container">
@@ -60,10 +61,15 @@
             <div class="section-head"><label class="section-head-text">Drawing</label><label class="section-collapse snap" onclick="collapseSection('snap')"><b>-</b></label></div>
 
             <div class="section-content snap">
+                <div class="button-grid tools">
+                    
+                </div>
+
+                <br/>
                 <label>Snap Threshold:</label>
                 <input type="range" id="snapSlider" value='10' step='1' min='1' max='20' onchange="setSnap(value)" />
                 <label id="snapValue">10</label><br/>
-                <input id="showBounding" type="checkbox" onchange="toggleBoundingBox(checked)" /><label>Show Bounding Box</label><br/>
+                <div id="brushToggleContainer" ><input id="brushToggle" type="checkbox" onchange="toggleBrush(checked)" /><label>Use Stamp</label><br/></div>
                 <div id="boundingScaleControl" style="display:none">
                     <label>Bounding Box Scale:</label>
                     <input type="range" id="snapSlider" value='1' step='0.1' min='0.6' max='1' onchange="setBoundingScale(value)" />
@@ -86,6 +92,9 @@
             <div class="section-head"><label class="section-head-text">Data</label><label class="section-collapse data" onclick="collapseSection('data')"><b>-</b></label></div>
 
             <div class="section-content data">
+                <button id="download" class="export" target="_blank" onclick="loadMap()">
+                    <h3>Load Map from String</h3>
+                </button>
                 <button id="download" class="export" target="_blank" onclick="downloadJson()">
                     <h3>Download JSON</h3>
                 </button>
@@ -94,8 +103,9 @@
                 </button>
                 <textarea id="jsonText">
                 </textarea>
-                <div id="testerButton">
-                </div>
+                <button id="download" class="export" target="_blank" onclick="downloadLoader()">
+                    <h3>Download Map Loader Library</h3>
+                </button>
                 <a id="downloadAnchorElem" class="export section" target="_blank" style="display:none;">
                 </a>
             </div>
