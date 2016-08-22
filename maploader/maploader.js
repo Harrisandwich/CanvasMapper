@@ -1,9 +1,13 @@
-var CanvasLoader = function(canvas,json)
+
+var CanvasLoader = function(canvas,imageId)
 {
     this.canvas = canvas;
     this.canvasContext = canvas.getContext("2d");
-    this.loader = new MapLoader();
-    this.backgroundImage = {};
+    this.imageReady = false
+    this.backgroundImage = {
+        id: imageId,
+    };
+    
     //this.maps = loader.load(json);
 
     this.mouseDown = function()
@@ -19,12 +23,14 @@ var CanvasLoader = function(canvas,json)
         */
     }
 
-    this.setCanvasDimensions = function(w,h)
+    this.setCanvasDimensions = function(w,h,scale)
     {
         canvas.width = w;
         canvas.height = h;
+        $("canvas").css("width", (canvas.width * scale) + "px");
+        $("canvas").css("height", (canvas.height * scale) + "px");
     }
-    this.setBackground = function(imageID,imageX,imageY,width,height)
+    this.setBackground = function(imageID,imageX,imageY,width,height,scale)
     {
 
         this.backgroundImage = {
@@ -34,18 +40,21 @@ var CanvasLoader = function(canvas,json)
             width:width,
             height:height,
         };
-        this.setCanvasDimensions(width,height);
+        this.setCanvasDimensions(width,height,scale);
     }
-    this.loadBackgroundImage = function(elementID)
+    this.loadBackgroundImage = function(elementID,scale,callback)
     {
 
         var imgObj = new Image();
         var cLoader = this;
-        imgObj.onload = function(){
-            cLoader.setBackground(elementID,0,0,this.width,this.height);
-            cLoader.drawBackground();
-        }
         imgObj.src = $("#"+elementID).attr("src");
+        return imgObj.onload = function(){
+            cLoader.setBackground(elementID,0,0,this.width,this.height,scale);
+            cLoader.drawBackground();
+
+            callback();
+        }
+        
     }
     
     
@@ -62,13 +71,17 @@ var MapLoader = function(canv,path)
 {
 
     this.canvas = canv;
+    this.canvasContext = this.canvas.getContext("2d");
 
     this.path = path;
     this.obj;
+    
+
+    
 
     this.load = function(data)
     {
-
+        
         try{
             if(this.path)
             {
@@ -89,10 +102,10 @@ var MapLoader = function(canv,path)
             this.obj.polys.forEach(function(el,i)
             {
                 el.clicked = false;
-                
-                el.checkCollison = function(mousePos,boundingBoxScale)
+                el.canvasContext = canv.getContext("2d");
+                el.boundingScale = 1;
+                el.checkCollision = function(mousePos,boundingBoxScale)
                 {
-                        
                     try{
                         
                         if(boundingBoxScale >= 0.6 && boundingBoxScale <=1)
@@ -125,20 +138,38 @@ var MapLoader = function(canv,path)
 
                 el.checkCollisionToScale = function(mousePos,boundingBoxScale,canvasScale)
                 {
-                    mousePos.x = mousePos.x / canvasScale;
-                    mousePos.y = mousePos.y / canvasScale;
+                    var mPos = {
+                        x: mousePos.x / canvasScale,
+                        y: mousePos.y / canvasScale,
+                    } 
+                    el.boundingScale = boundingBoxScale;
+                    var bBoxPoints = el.boundingBox.points;
+                    var bBox = el.boundingBox;
+                    var xDis = bBox.left.x - bBox.right.x;
+                    var yDis = bBox.top.y - bBox.bottom.y; 
+                    var xScalingFactor = (xDis - (xDis * el.boundingScale));
+                    var yScalingFactor = (yDis - (yDis * el.boundingScale));
+
+                    var topLeft = {x:bBox.left.x - xScalingFactor, y:bBox.top.y - yScalingFactor};
+                    var topRight = {x:bBox.right.x + xScalingFactor, y:bBox.top.y - yScalingFactor};
+                    var bottomLeft = {x:bBox.left.x - xScalingFactor, y:bBox.bottom.y + yScalingFactor};
+                    var bottomRight = {x:bBox.right.x + xScalingFactor, y:bBox.bottom.y + yScalingFactor};
 
                     try{
                         
-                        if(boundingBoxScale >= 0.6 && boundingBoxScale <=1)
+                        if(el.boundingScale >= 0.6 && el.boundingScale <=1)
                         {
-                            var xDis = this.boundingBox.left.x - this.boundingBox.right.x;
-                            var yDis = this.boundingBox.bottom.y - this.boundingBox.top.y; 
-                            var xScalingFactor = (xDis - (xDis * boundingBoxScale));
-                            var yScalingFactor = (yDis - (yDis * boundingBoxScale));
-                            if(mousePos.x < (this.boundingBox.right.x - xScalingFactor) && mousePos.x > (this.boundingBox.left.x + xScalingFactor))
+                            /*if(mousePos.x < topRight.x && mousePos.x > topLeft.x)
                             {
-                                if(mousePos.y < (this.boundingBox.bottom.y - yScalingFactor)&& mousePos.y > (this.boundingBox.top.y  + yScalingFactor))
+                                if(mousePos.y < bottomLeft.y && mousePos.y > topLeft.y )
+                                {
+                                    return true;
+                                }
+                            }*/
+
+                            if(mPos.x < bBox.right.x && mPos.x > bBox.left.y)
+                            {
+                                if(mPos.y < bBox.bottom.y && mPos.y > bBox.top.y )
                                 {
                                     return true;
                                 }
@@ -159,24 +190,73 @@ var MapLoader = function(canv,path)
                 }
 
 
-                el.draw = function(color)
+                el.draw = function(color,debug)
                 {
 
-                    canvasContext.fillStyle = color;
-                    canvasContext.beginPath();
-                    canvasContext.moveTo(el.points[0].x,el.points[0].y);
+                    this.canvasContext.fillStyle = color;
+                    this.canvasContext.beginPath();
+                    this.canvasContext.moveTo(el.points[0].x,el.points[0].y);
                     for(var p = 1; p < el.points.length; p++)
                     {
-                        canvasContext.lineTo(el.points[p].x,el.points[p].y);
+                        this.canvasContext.lineTo(el.points[p].x,el.points[p].y);
                     }
                     
-                    canvasContext.closePath();
-                    canvasContext.fill();
+                    this.canvasContext.closePath();
+                    this.canvasContext.fill();
+
+                    var boundingBoxScale = el.boundingScale;
+                    var bBoxPoints = el.boundingBox.points;
+                    var bBox = el.boundingBox;
+                    var xDis = bBox.left.x - bBox.right.x;
+                    var yDis = bBox.bottom.y - bBox.top.y; 
+                    var xScalingFactor = (xDis - (xDis * boundingBoxScale));
+                    var yScalingFactor = (yDis - (yDis * boundingBoxScale));
+                    var verts = [];
+
+                    var topLeft = {x:bBox.left.x - xScalingFactor, y:bBox.top.y + yScalingFactor};
+                    var topRight = {x:bBox.right.x + xScalingFactor, y:bBox.top.y + yScalingFactor};
+                    var bottomLeft = {x:bBox.left.x - xScalingFactor, y:bBox.bottom.y - yScalingFactor};
+                    var bottomRight = {x:bBox.right.x + xScalingFactor, y:bBox.bottom.y - yScalingFactor};
+
+                    verts.push(topLeft);
+                    verts.push(topRight);
+                    verts.push(bottomRight);
+                    verts.push(bottomLeft);
+
+                    if(debug)
+                    {
+                        var buffer = [];
+                        
+                        
+                       
+                        for (var i = 0; i < verts.length; i++)
+                        {   
+                            if((i+1) <= (verts.length - 1))
+                            {
+                                this.canvasContext.beginPath();
+                                this.canvasContext.moveTo(verts[i].x,verts[i].y);
+                                this.canvasContext.lineTo(verts[i+1].x,verts[i+1].y);
+                                this.canvasContext.lineWidth = 1;
+                                this.canvasContext.strokeStyle = "red";
+                                this.canvasContext.stroke();
+                            }
+                            
+
+                        };
+
+                        this.canvasContext.beginPath();
+                        this.canvasContext.moveTo(verts[verts.length - 1].x,verts[verts.length - 1].y);
+                        this.canvasContext.lineTo(verts[0].x,verts[0].y);
+                        this.canvasContext.lineWidth = 1;
+                        this.canvasContext.strokeStyle = "red";
+                        this.canvasContext.stroke();
+                        
+                    } 
 
                     
                     
                 };
-            });
+            }, this);
 
 
             return this.obj.polys

@@ -44,6 +44,7 @@ var snapPoint ={x:0,y:0,size:0};
 var mousePos = {x:0,y:0, size:0}
 var imgObj = new Image();
 var backgroundImage = {};
+var imageLoaded = false;
 
 
 //Objects------------------------------------------------------------------------------------------------------------------------------------------
@@ -115,6 +116,7 @@ class Poly
     {
         //an array of points (x,y)
         this.points = [];
+        this.name = "";
         
     }
 
@@ -214,6 +216,7 @@ class Poly
         var json = {
             poly: 
             {
+                name: "",
                 points:[],
                 boundingBox:
                 {
@@ -226,6 +229,7 @@ class Poly
             },
         };
 
+        json.poly.name = this.name;
         this.points.forEach(function(el,i,arr)
         {
             json.poly.points.push(el);
@@ -244,6 +248,17 @@ class Poly
         var strJson = "";
         strJson = JSON.stringify(this.Jsonify());
         return strJson
+    }
+
+    loadFromObject(obj)
+    {
+        this.points = [];
+
+        for(var p in obj.points)
+        {
+            this.points.push(obj.points[p]);
+        }
+        this.name = obj.name;
     }
 }
 
@@ -322,8 +337,8 @@ function cancelDrawing()
     //clear the current drawing in progress (right click?)
     $(".prompt").hide();
     showMessage("Drawing Cancelled.");
-    event.preventDefault();
     drawing = false;
+    saving = false;
     drawBuffer = [];
     snapPoint ={x:0,y:0,size:0};
     drawBackground();
@@ -383,6 +398,7 @@ function loadImage()
                 el.enable();
             });
             defaultTool.activate();
+            imageLoaded = true;
 
         }
         imgObj.src = "./loader/image."+$(".img-choose-dropdown").val();
@@ -453,7 +469,61 @@ function showPoly(index)
         drawBox(polys[index])
     }
 }
+function namePoly(index)
+{
+    //open a dialog box and get the text. Save it to the polygon
+    var name = prompt("Type a name and press okay","Poly"+index);
+    polys[index].name = name;
+    refreshList();
+}
+function loadMap()
+{
+    //read json from text box
 
+    if(imageLoaded)
+    {
+
+        var jsonString = $("#jsonText").val();
+
+        if(jsonString != null && jsonString != undefined && jsonString != "")
+        {
+            try
+            {
+                var map = JSON.parse(jsonString); 
+
+                map.polys.forEach(function(el,i,arr){
+                
+                    var poly = new Poly();
+                    if(el.name == undefined || el.name == null || el.name == "")
+                    {
+                        el.name = "Poly"+i;
+                    }
+                    poly.loadFromObject(el);
+                    polys.push(poly);
+                });
+                refreshList();
+                $("#jsonText").text("");
+            }
+            catch(e)
+            {
+                console.log(e);
+                showMessage("Error loading map. Please double check your data.")
+            }
+            
+        }
+        else
+        {
+            showMessage("No data provided. Paste your json string into the text area below");
+        }
+        
+
+    }
+    else
+    {
+        showMessage("No image loaded. Please load an image before loading a map");
+    }
+    
+}
 function hidePolys()
 {
     hoveredPoly = -1;
@@ -465,8 +535,13 @@ function refreshList()
     $(".list.container").html("");
     polys.forEach(function(el,i,arr)
     {
+        var name = "Poly "+i;
+        if(el.name != "")
+        {
+            name = el.name;
+        }
         $(".list.container").append(
-        "<div class='item' onmouseover='showPoly("+i+")' onmouseout='hidePolys()'><h4>Poly "+i+"</h4><button class='btn stamp' value='stamp' onclick='createStamp("+i+")'>Use as Stamp</button><button class='btn delete' value='No' onclick='removePoly("+i+")'>Delete</button></div>");
+        "<div class='item' onmouseover='showPoly("+i+")' onmouseout='hidePolys()'><h4>"+name+"</h4><button class='btn stamp' value='stamp' onclick='createStamp("+i+")'>Use as Stamp</button><button class='btn delete' value='No' onclick='removePoly("+i+")'>Delete</button><button class='btn rename' value='No' onclick='namePoly("+i+")'>Rename</button></div>");
     });
 }
 
@@ -697,7 +772,8 @@ function activateTool(id)
 function start()
 {
     refreshList();
-    loader = new MapLoader(false);
+    //loader = new MapLoader(false);
+    $("#jsonText").text("");
     initTools();
     clickOffsetY = canvas.width - $("canvas").css("width");
     clickOffsetX = canvas.height - $("canvas").css("height");
@@ -925,8 +1001,6 @@ $(document).ready(function(){
     canvasContext = canvas.getContext('2d');
     $(".controls").css("left",window.innerWidth - $(".controls").width());
     $(".controls").css("top",0);
-    //$(document).bind("mousedown", cutBranch);
-    //$(document).bind("mousemove", highlightBranch);
     start();
 
     $("canvas").bind("mousedown",mouseDown);
